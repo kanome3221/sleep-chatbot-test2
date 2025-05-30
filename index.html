@@ -1,114 +1,54 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>AI 수면 솔루션 챗봇</title>
+  <meta charset="UTF-8">
+  <title>수면 분석 챗봇</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .chat-container {
-      width: 400px;
-      height: 600px;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .chat-header {
-      background: #4b7bec;
-      color: white;
-      padding: 16px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .chat-messages {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-    }
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ddd;
-    }
-    .chat-input input {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      outline: none;
-    }
-    .chat-input button {
-      padding: 12px;
-      background: #4b7bec;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .message {
-      margin-bottom: 10px;
-    }
-    .user-message {
-      text-align: right;
-      color: #4b7bec;
-    }
-    .bot-message {
-      text-align: left;
-      color: #333;
-    }
+    body { font-family: sans-serif; margin: 2rem; }
+    textarea { width: 100%; height: 100px; }
+    #result { margin-top: 1rem; padding: 1rem; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">🛌 AI 수면 솔루션 챗봇</div>
-    <div class="chat-messages" id="messages"></div>
-    <div class="chat-input">
-      <input type="text" id="userInput" placeholder="최근 수면 습관을 입력해보세요" />
-      <button onclick="sendMessage()">전송</button>
-    </div>
-  </div>
+  <h1>수면 분석 챗봇</h1>
+  <textarea id="message" placeholder="최근 수면 습관을 입력해 주세요..."></textarea>
+  <button onclick="sendMessage()">분석 요청</button>
+  <div id="result">분석 결과가 여기에 표시됩니다.</div>
 
   <script>
     async function sendMessage() {
-      const input = document.getElementById("userInput");
-      const message = input.value.trim();
-      if (!message) return;
-      addMessage(message, 'user-message');
-      input.value = "";
+      const message = document.getElementById("message").value;
+      const resultElement = document.getElementById("result");
+      resultElement.textContent = "분석 중...";
 
       try {
         const response = await fetch("/api/gpt", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message })
         });
 
         const data = await response.json();
-        const reply = data.result?.summary || data.reply || "분석에 실패했습니다.";
-        addMessage(reply, 'bot-message');
-      } catch (err) {
-        console.error("오류 발생:", err);
-        addMessage("서버 연결에 실패했습니다. 나중에 다시 시도해주세요.", 'bot-message');
-      }
-    }
 
-    function addMessage(text, className) {
-      const messages = document.getElementById("messages");
-      const div = document.createElement("div");
-      div.className = `message ${className}`;
-      div.innerHTML = text.replace(/\n/g, '<br>');
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
+        if (data.result) {
+          const { summary, issues, suggestions } = data.result;
+          resultElement.innerHTML = `
+            <strong>📝 요약:</strong> ${summary}<br>
+            <strong>⚠️ 문제점:</strong> <ul>${issues.map(i => `<li>${i}</li>`).join("")}</ul>
+            <strong>💡 솔루션:</strong> <ul>${suggestions.map(s => `<li>${s}</li>`).join("")}</ul>
+          `;
+        } else if (data.reply) {
+          resultElement.innerHTML = `
+            <strong>GPT 응답 (원문):</strong><br>${data.reply}<br><br>
+            ⚠️ GPT가 JSON 형식으로 응답하지 않았습니다.
+          `;
+        } else {
+          throw new Error("분석 결과 없음");
+        }
+      } catch (error) {
+        console.error("분석 실패:", error);
+        resultElement.textContent = "분석에 실패했습니다.";
+      }
     }
   </script>
 </body>
