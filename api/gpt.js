@@ -32,18 +32,13 @@ export default async function handler(req, res) {
     });
 
     const result = await response.json();
-    const reply = result.choices?.[0]?.message?.content;
 
-    try {
-      const parsed = JSON.parse(reply);
-      return res.status(200).json({ result: parsed });
-    } catch (parseError) {
-      console.warn("GPT 응답 파싱 실패, 원문 출력:", reply);
-      return res.status(200).json({
-        reply,
-        error: "GPT 응답이 JSON 형식이 아닙니다."
-      });
-    }
+    // 디버깅을 위해 GPT의 전체 응답을 반환합니다
+    return res.status(200).json({
+      debug: true,
+      raw: result
+    });
+
   } catch (err) {
     console.error("분석 오류:", err);
     return res.status(500).json({ error: "Failed to analyze." });
