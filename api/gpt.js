@@ -34,15 +34,14 @@ export default async function handler(req, res) {
     const result = await response.json();
     const reply = result.choices?.[0]?.message?.content;
 
-    // 응답이 JSON 형식이 아닐 경우를 대비해 try-catch 추가
     try {
       const parsed = JSON.parse(reply);
       return res.status(200).json({ result: parsed });
     } catch (parseError) {
-      // 파싱 실패 시 원본 reply 그대로 전송
+      console.warn("GPT 응답 파싱 실패, 원문 출력:", reply);
       return res.status(200).json({
         reply,
-        error: "응답 파싱 실패: 예상 JSON 형식 아님"
+        error: "GPT 응답이 JSON 형식이 아닙니다."
       });
     }
   } catch (err) {
