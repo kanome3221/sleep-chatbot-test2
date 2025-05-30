@@ -30,6 +30,16 @@
 
         const data = await response.json();
 
+        if (data.raw) {
+          resultElement.innerHTML = `
+            <strong>GPT 전체 응답 (raw):</strong><br>
+            <pre style="white-space: pre-wrap; word-break: break-word;">
+${JSON.stringify(data.raw, null, 2)}
+            </pre>
+          `;
+          return;
+        }
+
         if (data.result) {
           const { summary, issues, suggestions } = data.result;
           resultElement.innerHTML = `
